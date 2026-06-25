@@ -17,6 +17,9 @@ const Settings = () => {
   const [dyslexiaFont, setDyslexiaFont] = useState(
     localStorage.getItem('dyslexiaFont') === 'true'
   );
+  const [focusReaderEnabled, setFocusReaderEnabled] = useState(
+    localStorage.getItem('focusReaderEnabled') !== 'false'
+  );
 
   // Apply changes when settings state changes
   useEffect(() => {
@@ -50,12 +53,17 @@ const Settings = () => {
     localStorage.setItem('dyslexiaFont', dyslexiaFont);
   }, [dyslexiaFont]);
 
+  useEffect(() => {
+    localStorage.setItem('focusReaderEnabled', focusReaderEnabled ? 'true' : 'false');
+  }, [focusReaderEnabled]);
+
   const handleReset = () => {
     setFontSize(16);
     setTheme('normal');
     setVoicePitch(1.0);
     setVoiceRate(1.0);
     setDyslexiaFont(false);
+    setFocusReaderEnabled(true);
   };
 
   return (
@@ -150,6 +158,21 @@ const Settings = () => {
             <h2 style={{ fontSize: '1.25rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>
               Screen Reader Sound Synthesis (TTS)
             </h2>
+
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem' }}>
+                <input
+                  type="checkbox"
+                  className="form-checkbox"
+                  checked={focusReaderEnabled}
+                  onChange={(e) => setFocusReaderEnabled(e.target.checked)}
+                />
+                <span style={{ fontWeight: '600' }}>Read aloud on focus/hover</span>
+              </label>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem', marginLeft: '1.6rem' }}>
+                Automatically reads button and input labels when you hover or focus them
+              </p>
+            </div>
             
             <div className="slider-group">
               <label htmlFor="voiceRateSlider">
