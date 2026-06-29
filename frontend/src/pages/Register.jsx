@@ -13,6 +13,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  console.log('API URL:', import.meta.env.VITE_API_URL);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
