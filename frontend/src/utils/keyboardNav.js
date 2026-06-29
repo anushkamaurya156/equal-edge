@@ -19,6 +19,11 @@ export function initKeyboardNav() {
     if (e.key === 'Enter' || e.key === ' ') {
       const target = document.activeElement;
       if (!target) return;
+
+      // Never intercept Space/Enter when the user is typing in a form field
+      const editableTag = target.tagName.toLowerCase();
+      if (editableTag === 'input' || editableTag === 'textarea' || editableTag === 'select') return;
+
       const isCard = target.classList.contains('card') || target.closest('.card');
       const isRoleButton = target.getAttribute('role') === 'button' || target.closest('[role="button"]');
       if (isCard || isRoleButton) {
