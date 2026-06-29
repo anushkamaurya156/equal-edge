@@ -208,7 +208,7 @@ const Profile = () => {
                   type="text"
                   id="headline"
                   className="form-control"
-                  placeholder="e.g. Front-end Developer specialized in Accessible UI Design"
+                  placeholder="Enter your professional headline"
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                 />
@@ -219,7 +219,7 @@ const Profile = () => {
                   id="bio"
                   rows="4"
                   className="form-control"
-                  placeholder="Describe your achievements, vocational training, and passion..."
+                  placeholder="Describe your experience, achievements, vocational training, and goals"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                 />
@@ -293,7 +293,7 @@ const Profile = () => {
                   id="acac"
                   rows="3"
                   className="form-control"
-                  placeholder="e.g. Ergonomic desk, sign language interpreter support, captions in virtual meetings, screen reader tags..."
+                  placeholder="Describe any accommodations you need (e.g. ergonomic desk, sign language interpreter, screen reader compatibility)"
                   value={accommodationsNeeded}
                   onChange={(e) => setAccommodationsNeeded(e.target.value)}
                 />
@@ -339,7 +339,7 @@ const Profile = () => {
                     type="text"
                     id="skills"
                     className="form-control"
-                    placeholder="HTML, JavaScript, React, Office Word"
+                    placeholder="Enter skills separated by commas (e.g. React, JavaScript, HTML)"
                     value={skills}
                     onChange={(e) => setSkills(e.target.value)}
                   />
@@ -353,7 +353,7 @@ const Profile = () => {
                     type="text"
                     id="edu"
                     className="form-control"
-                    placeholder="e.g. Bachelor of Computer Applications, 2024"
+                    placeholder="Enter your highest qualification and year"
                     value={education}
                     onChange={(e) => setEducation(e.target.value)}
                   />
@@ -364,7 +364,7 @@ const Profile = () => {
                     type="text"
                     id="certs"
                     className="form-control"
-                    placeholder="e.g. AWS Cloud Practitioner, Google Project Management"
+                    placeholder="Enter certifications separated by commas"
                     value={certifications}
                     onChange={(e) => setCertifications(e.target.value)}
                   />
@@ -420,7 +420,7 @@ const Profile = () => {
                     type="text"
                     id="whc"
                     className="form-control"
-                    placeholder="e.g. Tech Solution"
+                    placeholder="Enter company name"
                     value={newCompany}
                     onChange={(e) => setNewCompany(e.target.value)}
                   />
@@ -431,7 +431,7 @@ const Profile = () => {
                     type="text"
                     id="whr"
                     className="form-control"
-                    placeholder="e.g. Support Specialist"
+                    placeholder="Enter your job title or designation"
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
                   />
@@ -442,7 +442,7 @@ const Profile = () => {
                     type="text"
                     id="whd"
                     className="form-control"
-                    placeholder="e.g. Jan 2022 - Aug 2023"
+                    placeholder="Enter duration (e.g. Jan 2022 - Aug 2023)"
                     value={newDuration}
                     onChange={(e) => setNewDuration(e.target.value)}
                   />
@@ -471,7 +471,7 @@ const Profile = () => {
                     type="text"
                     id="phone"
                     className="form-control"
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="Enter your phone number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -482,7 +482,7 @@ const Profile = () => {
                     type="text"
                     id="city"
                     className="form-control"
-                    placeholder="e.g. Mumbai"
+                    placeholder="Enter your city"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
@@ -493,7 +493,7 @@ const Profile = () => {
                     type="text"
                     id="state"
                     className="form-control"
-                    placeholder="e.g. Maharashtra"
+                    placeholder="Enter your state"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                   />
@@ -507,7 +507,7 @@ const Profile = () => {
                     type="url"
                     id="linkedin"
                     className="form-control"
-                    placeholder="https://linkedin.com/in/username"
+                    placeholder="Enter your LinkedIn profile URL"
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
                   />
@@ -518,7 +518,7 @@ const Profile = () => {
                     type="url"
                     id="portfolio"
                     className="form-control"
-                    placeholder="https://portfolio.com"
+                    placeholder="Enter your portfolio or website URL"
                     value={portfolioUrl}
                     onChange={(e) => setPortfolioUrl(e.target.value)}
                   />

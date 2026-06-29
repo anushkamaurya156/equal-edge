@@ -110,10 +110,11 @@ const PostJob = () => {
                   type="text"
                   id="title"
                   className="form-control"
-                  placeholder="e.g. Accessibility Analyst / Web Developer"
+                  placeholder="Enter job title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
+                  aria-required="true"
                 />
               </div>
 
@@ -123,10 +124,11 @@ const PostJob = () => {
                   type="text"
                   id="company"
                   className="form-control"
-                  placeholder="e.g. Inclusive Corp Ltd."
+                  placeholder="Enter company name"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   required
+                  aria-required="true"
                 />
               </div>
             </div>
@@ -138,10 +140,11 @@ const PostJob = () => {
                   type="text"
                   id="location"
                   className="form-control"
-                  placeholder="e.g. Bangalore, Karnataka (or Remote)"
+                  placeholder="Enter city, state or Remote"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
+                  aria-required="true"
                 />
               </div>
 
@@ -188,10 +191,11 @@ const PostJob = () => {
                 id="description"
                 rows="5"
                 className="form-control"
-                placeholder="Describe the core goals of the position..."
+                placeholder="Describe the role, its goals, and the impact this person will have"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
+                aria-required="true"
               />
             </div>
 
@@ -201,7 +205,7 @@ const PostJob = () => {
                 id="responsibilities"
                 rows="3"
                 className="form-control"
-                placeholder="List day-to-day duties..."
+                placeholder="List the day-to-day responsibilities"
                 value={responsibilities}
                 onChange={(e) => setResponsibilities(e.target.value)}
               />
@@ -213,7 +217,7 @@ const PostJob = () => {
                 id="requirements"
                 rows="3"
                 className="form-control"
-                placeholder="List mandatory qualifications or certifications..."
+                placeholder="List required qualifications and certifications"
                 value={requirements}
                 onChange={(e) => setRequirements(e.target.value)}
               />
@@ -225,7 +229,7 @@ const PostJob = () => {
                 type="text"
                 id="skills"
                 className="form-control"
-                placeholder="e.g. React, JavaScript, WCAG, HTML5"
+                placeholder="Enter required skills separated by commas"
                 value={skillsRequired}
                 onChange={(e) => setSkillsRequired(e.target.value)}
               />
@@ -245,7 +249,7 @@ const PostJob = () => {
                   type="number"
                   id="salMin"
                   className="form-control"
-                  placeholder="e.g. 400000"
+                  placeholder="Enter minimum annual salary"
                   value={salaryMin}
                   onChange={(e) => setSalaryMin(e.target.value)}
                 />
@@ -257,7 +261,7 @@ const PostJob = () => {
                   type="number"
                   id="salMax"
                   className="form-control"
-                  placeholder="e.g. 800000"
+                  placeholder="Enter maximum annual salary"
                   value={salaryMax}
                   onChange={(e) => setSalaryMax(e.target.value)}
                 />
@@ -352,7 +356,7 @@ const PostJob = () => {
                 id="otherAccom"
                 rows="2"
                 className="form-control"
-                placeholder="List any other specific equipment, ergonomic setups, or mental health support provided..."
+                placeholder="Describe other accessibility support or equipment provided"
                 value={otherAccommodations}
                 onChange={(e) => setOtherAccommodations(e.target.value)}
               />

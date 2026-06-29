@@ -58,8 +58,8 @@ const Register = () => {
       <div className="card">
         <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Create Account</h2>
 
-        {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+        {error && <div id="register-error" role="alert" className="alert alert-danger">{error}</div>}
+        {success && <div id="register-success" role="status" className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit}>
           {/* Custom Card Role Selector */}
@@ -99,10 +99,12 @@ const Register = () => {
               type="text"
               id="name"
               className="form-control"
-              placeholder="e.g. Rahul Sharma"
+              placeholder="Enter your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
 
@@ -112,10 +114,12 @@ const Register = () => {
               type="email"
               id="email"
               className="form-control"
-              placeholder="e.g. rahul@example.com"
+              placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
 
@@ -125,10 +129,12 @@ const Register = () => {
               type="password"
               id="password"
               className="form-control"
-              placeholder="At least 6 characters"
+              placeholder="Enter a password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
 
@@ -138,10 +144,12 @@ const Register = () => {
               type="password"
               id="confirmPassword"
               className="form-control"
-              placeholder="Re-enter password"
+              placeholder="Re-enter your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
 

@@ -45,7 +45,7 @@ const Login = () => {
       <div className="card">
         <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Sign In</h2>
 
-        {error && <div className="alert alert-danger">{error}</div>}
+        {error && <div id="login-error" role="alert" className="alert alert-danger">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -54,10 +54,12 @@ const Login = () => {
               type="email"
               id="email"
               className="form-control"
-              placeholder="e.g. rahul@example.com"
+              placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
 
@@ -71,6 +73,8 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-required="true"
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
 
