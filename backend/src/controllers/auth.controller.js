@@ -6,11 +6,17 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
+    // Validate inputs
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields (name, email, password, role) are required' });
+    }
+
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
+
 
     // Encrypt password
     const salt = await bcrypt.genSalt(10);
@@ -51,6 +57,10 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     // Check for user
     const user = await User.findOne({ email });

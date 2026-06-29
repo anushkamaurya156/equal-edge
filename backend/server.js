@@ -17,8 +17,25 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration
 const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 app.use(cors({
-  origin: clientUrl,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(allowed => origin.toLowerCase() === allowed.toLowerCase()) || 
+                      origin.endsWith('.vercel.app');
+                      
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS: Origin ${origin} not explicitly in allowedOrigins list, but allowed via fallback.`);
+      callback(null, true);
+    }
+  },
   credentials: true
 }));
 
@@ -34,8 +51,9 @@ app.use('/api/ai', require('./src/routes/ai.routes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is healthy and running' });
+  res.status(200).json({ status: 'ok', success: true, message: 'Server is healthy and running' });
 });
+
 
 // Error handling middleware (must be after routes)
 app.use(errorHandler);
