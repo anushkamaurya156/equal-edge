@@ -1,74 +1,59 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-export const AuthContext = createContext();
+// ─── Context & hook ──────────────────────────────────────────────────────────
 
-const decodeToken = (token) => {
+export const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+  return ctx;
+};
+
+// ─── Helper: read the saved user object from localStorage ────────────────────
+
+const readStoredUser = () => {
   try {
-    if (!token) return null;
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      window.atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Failed to decode token:', error);
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
     return null;
   }
 };
 
+// ─── Provider ────────────────────────────────────────────────────────────────
+
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Initialise from localStorage so a page-refresh keeps the user logged in
+  const [user, setUser] = useState(readStoredUser);
 
-  useEffect(() => {
-    if (token) {
-      const decoded = decodeToken(token);
-      if (decoded && decoded.exp * 1000 > Date.now()) {
-        setUser({
-          id: decoded.id,
-          role: decoded.role
-        });
-      } else {
-        // Token expired
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  }, [token]);
-
-  const login = (jwtToken, userData) => {
-    localStorage.setItem('token', jwtToken);
-    setToken(jwtToken);
-    const decoded = decodeToken(jwtToken);
-    setUser({
-      id: decoded ? decoded.id : userData.id,
-      role: decoded ? decoded.role : userData.role,
-      name: userData.name,
-      email: userData.email
-    });
+  /**
+   * login(userData, token)
+   * userData shape: { id, name, email, role }
+   * Saves both to localStorage and to React state.
+   */
+  const login = (userData, token) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', token);
   };
 
+  /**
+   * logout()
+   * Clears localStorage and React state.
+   */
   const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
     setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const isAuthenticated = !!user;
   const role = user ? user.role : null;
 
   return (
-    <AuthContext.Provider value={{ token, user, loading, login, logout, isAuthenticated, role }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, role, loading: false }}>
+      {children}
     </AuthContext.Provider>
   );
 };

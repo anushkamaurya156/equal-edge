@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { loginUser } from '../api/auth';
 
 const Login = () => {
@@ -8,7 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,7 +24,8 @@ const Login = () => {
     try {
       const data = await loginUser(email, password);
       // login method decodes JWT and saves values to state
-      login(data.token, data.user);
+      // login(userData, token) — must match AuthContext signature
+      login(data.user, data.token);
       
       // Redirect based on role
       if (data.user.role === 'jobseeker') {

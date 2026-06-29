@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
-  const { isAuthenticated, role, logout, user } = useContext(AuthContext);
+  const { user, isAuthenticated, role, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -14,16 +14,28 @@ const Navbar = () => {
   return (
     <header>
       <div className="container flex align-center justify-between" style={{ padding: '1rem 0' }}>
+        {/* Brand */}
         <div className="navbar-brand">
-          <Link to="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Link
+            to="/"
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
             <span>♿</span> सक्षम Hire
           </Link>
         </div>
-        
+
+        {/* Nav links */}
         <nav className="navbar-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          <Link to="/">Home</Link>
           {isAuthenticated ? (
             <>
+              {/* Role-specific links */}
               {role === 'jobseeker' ? (
                 <>
                   <Link to="/jobseeker/dashboard">Dashboard</Link>
@@ -37,17 +49,27 @@ const Navbar = () => {
                   <Link to="/employer/settings">Settings</Link>
                 </>
               )}
+
+              {/* Greeting – shows the real name from the stored user object */}
               <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                Hi, <strong>{user?.name || 'User'}</strong> ({role === 'jobseeker' ? 'Seeker' : 'Employer'})
+                Hi, <strong>{user?.name || 'User'}</strong>{' '}
+                ({role === 'jobseeker' ? 'Seeker' : 'Employer'})
               </span>
+
               <button onClick={handleLogout} className="btn btn-secondary btn-sm">
                 Log Out
               </button>
             </>
           ) : (
             <>
+              {/* Home is only visible when logged OUT */}
+              <Link to="/">Home</Link>
               <Link to="/login">Sign In</Link>
-              <Link to="/register" className="btn btn-primary btn-sm" style={{ color: 'var(--bg)' }}>
+              <Link
+                to="/register"
+                className="btn btn-primary btn-sm"
+                style={{ color: 'var(--bg)' }}
+              >
                 Get Started
               </Link>
             </>

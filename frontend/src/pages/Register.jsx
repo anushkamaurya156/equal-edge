@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../api/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -11,9 +12,9 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  console.log('API URL:', import.meta.env.VITE_API_URL);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -37,11 +38,14 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await registerUser(name, email, password, role);
-      setSuccess('Account created successfully! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      const data = await registerUser(name, email, password, role);
+      // Auto-login after registration — no redirect to /login needed
+      login(data.user, data.token);
+      if (data.user.role === 'jobseeker') {
+        navigate('/jobseeker/dashboard');
+      } else {
+        navigate('/employer/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

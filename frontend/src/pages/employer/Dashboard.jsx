@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { getEmployerJobs } from '../../api/jobs';
 import { getJobApplications } from '../../api/applications';
 
@@ -18,7 +18,7 @@ const EmployerSidebar = () => {
 };
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [jobsCount, setJobsCount] = useState(0);
   const [totalAppsCount, setTotalAppsCount] = useState(0);
   const [shortlistedCount, setShortlistedCount] = useState(0);

@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { getMyProfile } from '../../api/profile';
 import { getMyApplications } from '../../api/applications';
 import { matchJobs } from '../../api/ai';
@@ -20,7 +20,7 @@ const JobseekerSidebar = () => {
 };
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [applicationsCount, setApplicationsCount] = useState(0);
   const [matchedJobsCount, setMatchedJobsCount] = useState(0);
