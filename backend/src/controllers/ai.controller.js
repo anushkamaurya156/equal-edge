@@ -171,41 +171,50 @@ exports.matchJobs = async (req, res, next) => {
     if (openai) {
       try {
         const prompt = `
-          Analyze the match between a job seeker and a list of jobs.
-          
-          Job Seeker Profile:
-          - Disability Type: ${profile.disabilityType}
-          - Disability Severity: ${profile.disabilitySeverity}
-          - Assistive Technologies: ${JSON.stringify(profile.assistiveTech)}
-          - Work type preference: ${profile.preferredWorkType}
-          - Headline: ${profile.headline}
-          - Bio: ${profile.bio}
-          - Skills: ${JSON.stringify(profile.skills)}
-          - Accommodations needed: ${profile.accommodationsNeeded}
-          
-          Jobs to evaluate:
-          ${JSON.stringify(jobs.map(j => ({
-            id: j._id,
-            title: j.title,
-            company: j.company,
-            description: j.description,
-            skillsRequired: j.skillsRequired,
-            workType: j.workType,
-            accessibilityFeatures: j.accessibilityFeatures
-          })))}
+You are an expert inclusive hiring assistant. Your job is to accurately score how well a job seeker matches each job listing based on skills, accessibility needs, and work preferences.
 
-          Return a JSON array containing match evaluations for each job. For each entry, provide:
-          - jobId: The exact Job ID
-          - matchScore: A number from 0 to 100
-          - reason: A short, inclusive sentence explaining the score, mentioning how the job's skills and accessibility features fit the candidate.
+CANDIDATE PROFILE:
+- Skills: ${JSON.stringify(profile.skills || [])}
+- Preferred Work Type: ${profile.preferredWorkType || 'any'}
+- Disability Type: ${profile.disabilityType || 'not specified'}
+- Assistive Technologies Used: ${JSON.stringify(profile.assistiveTech || [])}
+- Experience Level: ${profile.experienceLevel || 'not specified'}
+- Accommodations Needed: ${profile.accommodationsNeeded || 'none specified'}
+- Bio/Headline: ${profile.headline || ''} ${profile.bio || ''}
 
-          Format your entire response as a raw JSON array ONLY, e.g. [{"jobId":"...", "matchScore": 85, "reason": "..."}]. Do not include markdown wraps like \`\`\`json.
-        `;
+JOBS TO EVALUATE:
+${jobs.map((j, i) => `
+Job ${i + 1}:
+- ID: ${j._id}
+- Title: ${j.title}
+- Company: ${j.company}
+- Required Skills: ${JSON.stringify(j.skillsRequired || [])}
+- Work Type: ${j.workType}
+- Job Type: ${j.jobType}
+- Accessibility Features: wheelchair=${j.accessibilityFeatures?.wheelchairAccessible}, screenReader=${j.accessibilityFeatures?.screenReaderCompatible}, flexibleHours=${j.accessibilityFeatures?.flexibleHours}, wfh=${j.accessibilityFeatures?.workFromHome}, signLanguage=${j.accessibilityFeatures?.signLanguageSupport}, assistiveTech=${j.accessibilityFeatures?.assistiveTechProvided}
+- Description: ${(j.description || '').slice(0, 200)}
+`).join('\n')}
+
+SCORING RULES (apply strictly):
+1. Skills match (0-40 points): Count how many required skills the candidate has. Score = (matched skills / total required skills) * 40. If candidate has NO matching skills, score must be below 30.
+2. Work type match (0-20 points): exact match = 20, remote vs hybrid = 10, complete mismatch = 0.
+3. Accessibility match (0-30 points): For visual disability, screenReader=true gives 30. For mobility, wheelchair=true gives 30. For hearing, signLanguage=true gives 30. workFromHome or flexibleHours gives 15 each (max 30). No relevant features = 0.
+4. Experience match (0-10 points): fresher=entry level, junior=junior, mid=mid, senior=senior. Matching level = 10, one level off = 5, two+ levels off = 0.
+
+STRICT RULES:
+- A job with 0 skill matches AND wrong work type MUST score below 25.
+- A job with 3+ skill matches AND correct work type MUST score above 65.
+- Be precise, not generous. Scores should reflect real compatibility.
+- Reason must mention specific matched/missing skills by name.
+
+Return ONLY a raw JSON array, no markdown, no explanation:
+[{"jobId": "exact_id_here", "matchScore": 72, "reason": "Matches 3/4 required skills (React, Node.js, MongoDB). Remote work aligns with preference. Screen reader compatible for visual accessibility."}, ...]
+`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-3.5-turbo",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.2
+          temperature: 0.1
         });
 
         const textResponse = response.choices[0].message.content.trim();
