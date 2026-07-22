@@ -83,7 +83,7 @@ if (process.env.GROQ_API_KEY) {
   });
 }
 
-// Fallback logic for match-jobs
+// Fallback logic for match-jobs (retained for reference, no longer called by matchJobs)
 const fallbackMatchJobs = (profile, jobs) => {
   return jobs.map(job => {
     let score = 50; // Base score
@@ -155,6 +155,125 @@ const fallbackMatchJobs = (profile, jobs) => {
   }).sort((a, b) => b.matchScore - a.matchScore);
 };
 
+// ---------------------------------------------------------------------------
+// Deterministic scoring helper — no AI involved
+// ---------------------------------------------------------------------------
+const EXPERIENCE_ORDER = ['fresher', 'junior', 'mid', 'senior'];
+
+const calculateMatchScore = (profile, job) => {
+  const requiredSkills = (job.skillsRequired || []).map(s => s.toLowerCase());
+  const candidateSkills = (profile.skills || []).map(s => s.toLowerCase());
+
+  // --- Skills (0-40) ---
+  let skillScore = 0;
+  let matchedSkills = [];
+  let missingSkills = [];
+  if (requiredSkills.length > 0) {
+    matchedSkills = requiredSkills.filter(s => candidateSkills.includes(s));
+    missingSkills  = requiredSkills.filter(s => !candidateSkills.includes(s));
+    skillScore = (matchedSkills.length / requiredSkills.length) * 40;
+  }
+
+  // --- Work type (0-20) ---
+  let workTypeScore = 0;
+  let workTypeNote = '';
+  const preferredWork = (profile.preferredWorkType || '').toLowerCase();
+  const jobWork       = (job.workType || '').toLowerCase();
+  if (preferredWork && jobWork) {
+    if (preferredWork === jobWork) {
+      workTypeScore = 20;
+      workTypeNote  = `Work type is an exact match (${job.workType}).`;
+    } else if (
+      (preferredWork === 'remote' && jobWork === 'hybrid') ||
+      (preferredWork === 'hybrid' && jobWork === 'remote')
+    ) {
+      workTypeScore = 10;
+      workTypeNote  = `Partial work-type match (preferred ${profile.preferredWorkType}, job offers ${job.workType}).`;
+    } else {
+      workTypeScore = 0;
+      workTypeNote  = `Work-type mismatch (preferred ${profile.preferredWorkType}, job offers ${job.workType}).`;
+    }
+  }
+
+  // --- Accessibility (0-30) ---
+  let accessibilityScore = 0;
+  let accessibilityNote  = '';
+  const features = job.accessibilityFeatures || {};
+  const disType  = (profile.disabilityType || '').toLowerCase();
+
+  if (disType === 'visual' && features.screenReaderCompatible) {
+    accessibilityScore = 30;
+    accessibilityNote  = 'Screen reader compatible for visual accessibility.';
+  } else if (disType === 'mobility' && features.wheelchairAccessible) {
+    accessibilityScore = 30;
+    accessibilityNote  = 'Wheelchair accessible for mobility support.';
+  } else if (disType === 'hearing' && features.signLanguageSupport) {
+    accessibilityScore = 30;
+    accessibilityNote  = 'Sign language support available.';
+  } else {
+    const accParts = [];
+    if (features.workFromHome)   { accessibilityScore += 15; accParts.push('work from home'); }
+    if (features.flexibleHours)  { accessibilityScore += 15; accParts.push('flexible hours'); }
+    accessibilityScore = Math.min(30, accessibilityScore);
+    accessibilityNote  = accParts.length > 0
+      ? `Offers ${accParts.join(' and ')}.`
+      : 'No specific accessibility features matched.';
+  }
+
+  // --- Experience (0-10) ---
+  let experienceScore = 0;
+  let experienceNote  = '';
+  const candidateExp = (profile.experienceLevel || '').toLowerCase();
+  const jobExp       = (job.experienceLevel    || '').toLowerCase();
+
+  if (candidateExp && EXPERIENCE_ORDER.includes(candidateExp)) {
+    if (jobExp && EXPERIENCE_ORDER.includes(jobExp)) {
+      const diff = Math.abs(EXPERIENCE_ORDER.indexOf(candidateExp) - EXPERIENCE_ORDER.indexOf(jobExp));
+      if (diff === 0) {
+        experienceScore = 10;
+        experienceNote  = `Experience level matches (${job.experienceLevel}).`;
+      } else if (diff === 1) {
+        experienceScore = 5;
+        experienceNote  = `Experience level is one step off (candidate: ${profile.experienceLevel}, job: ${job.experienceLevel}).`;
+      } else {
+        experienceScore = 0;
+        experienceNote  = `Experience level mismatch (candidate: ${profile.experienceLevel}, job: ${job.experienceLevel}).`;
+      }
+    } else {
+      experienceScore = 5; // no job-level specified — partial credit
+      experienceNote  = 'Experience level not specified for this job.';
+    }
+  } else {
+    experienceScore = 5; // no candidate level — partial credit
+    experienceNote  = 'Experience level not specified in profile.';
+  }
+
+  const score = Math.min(100, Math.max(0, Math.round(
+    skillScore + workTypeScore + accessibilityScore + experienceScore
+  )));
+
+  return { score, matchedSkills, missingSkills, workTypeNote, accessibilityNote, experienceNote };
+};
+
+// ---------------------------------------------------------------------------
+// JS-only templated reason — used when AI is unavailable or fails
+// ---------------------------------------------------------------------------
+const buildTemplatedReason = ({ matchedSkills, missingSkills, workTypeNote, accessibilityNote, experienceNote }) => {
+  const parts = [];
+  if (matchedSkills.length > 0) {
+    parts.push(`Matches ${matchedSkills.length} skill(s): ${matchedSkills.join(', ')}.`);
+  } else {
+    parts.push('No required skills matched.');
+  }
+  if (missingSkills.length > 0) {
+    parts.push(`Missing: ${missingSkills.join(', ')}.`);
+  }
+  if (workTypeNote)      parts.push(workTypeNote);
+  if (accessibilityNote) parts.push(accessibilityNote);
+  if (experienceNote)    parts.push(experienceNote);
+  return parts.join(' ');
+};
+
 // POST /api/ai/match-jobs
 exports.matchJobs = async (req, res, next) => {
   try {
@@ -168,67 +287,78 @@ exports.matchJobs = async (req, res, next) => {
       return res.status(200).json({ success: true, matches: [] });
     }
 
-    // If OpenAI is configured and available
+    // Step 1: Compute deterministic scores for every job in JS
+    const scoredJobs = jobs.map(job => ({
+      job,
+      ...calculateMatchScore(profile, job)
+    }));
+
+    // Step 2: If Groq is configured, ask AI to write ONE reason sentence per job
+    //         based on the already-computed score data. AI must NOT change any score.
     if (openai) {
       try {
-        const prompt = `
-You are an expert inclusive hiring assistant. Your job is to accurately score how well a job seeker matches each job listing based on skills, accessibility needs, and work preferences.
+        const reasonPrompt = `
+You are an inclusive hiring assistant. Scores have already been computed by a deterministic algorithm.
+Your ONLY task is to write one natural, human-friendly sentence explaining each match score.
+Do NOT invent or change any score. Do NOT add markdown. Do NOT include any text outside the JSON array.
 
-CANDIDATE PROFILE:
-- Skills: ${JSON.stringify(profile.skills || [])}
-- Preferred Work Type: ${profile.preferredWorkType || 'any'}
-- Disability Type: ${profile.disabilityType || 'not specified'}
-- Assistive Technologies Used: ${JSON.stringify(profile.assistiveTech || [])}
-- Experience Level: ${profile.experienceLevel || 'not specified'}
-- Accommodations Needed: ${profile.accommodationsNeeded || 'none specified'}
-- Bio/Headline: ${profile.headline || ''} ${profile.bio || ''}
+CANDIDATE: disability=${profile.disabilityType || 'not specified'}, preferredWork=${profile.preferredWorkType || 'any'}, experience=${profile.experienceLevel || 'not specified'}
 
-JOBS TO EVALUATE:
-${jobs.map((j, i) => `
+JOBS (with pre-computed scoring data):
+${scoredJobs.map((s, i) => `
 Job ${i + 1}:
-- ID: ${j._id}
-- Title: ${j.title}
-- Company: ${j.company}
-- Required Skills: ${JSON.stringify(j.skillsRequired || [])}
-- Work Type: ${j.workType}
-- Job Type: ${j.jobType}
-- Accessibility Features: wheelchair=${j.accessibilityFeatures?.wheelchairAccessible}, screenReader=${j.accessibilityFeatures?.screenReaderCompatible}, flexibleHours=${j.accessibilityFeatures?.flexibleHours}, wfh=${j.accessibilityFeatures?.workFromHome}, signLanguage=${j.accessibilityFeatures?.signLanguageSupport}, assistiveTech=${j.accessibilityFeatures?.assistiveTechProvided}
-- Description: ${(j.description || '').slice(0, 200)}
-`).join('\n')}
+- jobId: ${s.job._id}
+- title: ${s.job.title} at ${s.job.company}
+- matchScore: ${s.score}
+- matchedSkills: ${JSON.stringify(s.matchedSkills)}
+- missingSkills: ${JSON.stringify(s.missingSkills)}
+- workTypeNote: ${s.workTypeNote}
+- accessibilityNote: ${s.accessibilityNote}
+- experienceNote: ${s.experienceNote}
+`).join('')}
 
-SCORING RULES (apply strictly):
-1. Skills match (0-40 points): Count how many required skills the candidate has. Score = (matched skills / total required skills) * 40. If candidate has NO matching skills, score must be below 30.
-2. Work type match (0-20 points): exact match = 20, remote vs hybrid = 10, complete mismatch = 0.
-3. Accessibility match (0-30 points): For visual disability, screenReader=true gives 30. For mobility, wheelchair=true gives 30. For hearing, signLanguage=true gives 30. workFromHome or flexibleHours gives 15 each (max 30). No relevant features = 0.
-4. Experience match (0-10 points): fresher=entry level, junior=junior, mid=mid, senior=senior. Matching level = 10, one level off = 5, two+ levels off = 0.
-
-STRICT RULES:
-- A job with 0 skill matches AND wrong work type MUST score below 25.
-- A job with 3+ skill matches AND correct work type MUST score above 65.
-- Be precise, not generous. Scores should reflect real compatibility.
-- Reason must mention specific matched/missing skills by name.
-
-Return ONLY a raw JSON array, no markdown, no explanation:
-[{"jobId": "exact_id_here", "matchScore": 72, "reason": "Matches 3/4 required skills (React, Node.js, MongoDB). Remote work aligns with preference. Screen reader compatible for visual accessibility."}, ...]
+Return ONLY a raw JSON array — one object per job, in the same order:
+[{"jobId": "<exact id>", "reason": "<one sentence>"}, ...]
 `;
 
         const response = await openai.chat.completions.create({
           model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.1
+          messages: [{ role: "user", content: reasonPrompt }],
+          temperature: 0.3
         });
 
         let textResponse = response.choices[0].message.content.trim();
         textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-        const matches = JSON.parse(textResponse);
+        const aiReasons = JSON.parse(textResponse);
+
+        // Build a lookup map from jobId -> AI reason
+        const reasonMap = {};
+        aiReasons.forEach(r => { if (r.jobId && r.reason) reasonMap[String(r.jobId)] = r.reason; });
+
+        // Step 3: Merge AI reasons onto deterministic scores
+        const matches = scoredJobs
+          .map(s => ({
+            jobId:      s.job._id,
+            matchScore: s.score,
+            reason:     reasonMap[String(s.job._id)] || buildTemplatedReason(s)
+          }))
+          .sort((a, b) => b.matchScore - a.matchScore);
+
         return res.status(200).json({ success: true, matches });
       } catch (err) {
-        console.warn("OpenAI Job Match failed. Falling back to local rules matcher.", err.message);
+        console.warn('Groq reason generation failed, using templated reasons.', err.message);
       }
     }
 
-    // Fallback rule matcher
-    const matches = fallbackMatchJobs(profile, jobs);
+    // Step 4: No AI or AI failed — use deterministic scores with templated reasons
+    const matches = scoredJobs
+      .map(s => ({
+        jobId:      s.job._id,
+        matchScore: s.score,
+        reason:     buildTemplatedReason(s)
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore);
+
     res.status(200).json({ success: true, matches });
   } catch (error) {
     next(error);
