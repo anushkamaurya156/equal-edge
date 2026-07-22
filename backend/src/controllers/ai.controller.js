@@ -74,11 +74,12 @@ const SCHEMES = [
   }
 ];
 
-// Initialize OpenAI client
+// Initialize Groq client (OpenAI-compatible)
 let openai;
-if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'YOUR_OPENAI_KEY_HERE') {
+if (process.env.GROQ_API_KEY) {
   openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1"
   });
 }
 
@@ -212,12 +213,13 @@ Return ONLY a raw JSON array, no markdown, no explanation:
 `;
 
         const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.1
         });
 
-        const textResponse = response.choices[0].message.content.trim();
+        let textResponse = response.choices[0].message.content.trim();
+        textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         const matches = JSON.parse(textResponse);
         return res.status(200).json({ success: true, matches });
       } catch (err) {
@@ -255,12 +257,13 @@ exports.checkResume = async (req, res, next) => {
         `;
 
         const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.3
         });
 
-        const textResponse = response.choices[0].message.content.trim();
+        let textResponse = response.choices[0].message.content.trim();
+        textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         const suggestions = JSON.parse(textResponse);
         return res.status(200).json({ success: true, improvements: suggestions });
       } catch (err) {
@@ -324,12 +327,13 @@ exports.matchSchemes = async (req, res, next) => {
         `;
 
         const response = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.3
         });
 
-        const textResponse = response.choices[0].message.content.trim();
+        let textResponse = response.choices[0].message.content.trim();
+        textResponse = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
         const matched = JSON.parse(textResponse);
         return res.status(200).json({ success: true, schemes: matched });
       } catch (err) {
