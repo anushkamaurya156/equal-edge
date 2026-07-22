@@ -50,7 +50,7 @@ const PostJob = () => {
       description,
       responsibilities,
       requirements,
-      skillsRequired,
+      skillsRequired: skillsRequired.split(',').map(s => s.trim()).filter(Boolean),
       salaryMin: salaryMin ? Number(salaryMin) : undefined,
       salaryMax: salaryMax ? Number(salaryMax) : undefined,
       currency,
